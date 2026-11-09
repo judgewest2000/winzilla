@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Winzilla (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Winzilla (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

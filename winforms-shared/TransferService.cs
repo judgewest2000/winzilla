@@ -1,0 +1,50 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Winzilla
+{
+    /// <summary>Recursive upload/download built on top of <see cref="IRemoteClient"/>.</summary>
+    public static class TransferService
+    {
+        public static async Task UploadAsync(IRemoteClient client, string localPath, string remoteDir,
+            Action<string> status, TransferProgress progress, CancellationToken ct)
+        {
+            string name = Path.GetFileName(localPath.TrimEnd('\\', '/'));
+            string target = RemotePath.Combine(remoteDir, name);
+
+            if (Directory.Exists(localPath))
+            {
+                await client.CreateDirectoryAsync(target, ct);
+                foreach (var child in Directory.EnumerateFileSystemEntries(localPath))
+                    await UploadAsync(client, child, target, status, progress, ct);
+            }
+            else if (File.Exists(localPath))
+            {
+                status("Uploading " + name);
+                progress.Begin(localPath, target, new FileInfo(localPath).Length);
+                await client.UploadFileAsync(localPath, target, progress, ct);
+            }
+        }
+
+        public static async Task DownloadAsync(IRemoteClient client, FileEntry entry, string localDir,
+            Action<string> status, TransferProgress progress, CancellationToken ct)
+        {
+            string target = Path.Combine(localDir, entry.Name);
+
+            if (entry.IsDirectory)
+            {
+                Directory.CreateDirectory(target);
+                foreach (var child in await client.ListAsync(entry.FullPath, ct))
+                    await DownloadAsync(client, child, target, status, progress, ct);
+            }
+            else
+            {
+                status("Downloading " + entry.Name);
+                progress.Begin(entry.FullPath, target, entry.Size);
+                await client.DownloadFileAsync(entry.FullPath, target, progress, ct);
+            }
+        }
+    }
+}
