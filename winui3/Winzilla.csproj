@@ -82,6 +82,16 @@
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
+  <!-- Publish omits compiled XAML (.xbf), the PRI index and Assets for this unpackaged app, which crashes it at startup. -->
+  <Target Name="CopyWinUIResourcesToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_WinUIResource Include="$(OutDir)*.xbf;$(OutDir)$(AssemblyName).pri" />
+      <_WinUIAsset Include="$(OutDir)Assets\**" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_WinUIResource)" DestinationFolder="$(PublishDir)" />
+    <Copy SourceFiles="@(_WinUIAsset)" DestinationFolder="$(PublishDir)Assets\%(RecursiveDir)" />
+  </Target>
+
   <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
