@@ -44,6 +44,17 @@
         </Grid.RowDefinitions>
 
         <!-- Connection bar -->
+        <StackPanel Spacing="6">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox x:Name="SavedBox" Header="Saved connections" Width="220" SelectionChanged="SavedBox_Changed"
+                      AutomationProperties.Name="Saved connections" />
+            <Button x:Name="SaveSavedButton" Content="Save" VerticalAlignment="Bottom" Click="SaveConnection_Click"
+                    AutomationProperties.Name="Save connection" />
+            <Button x:Name="DeleteSavedButton" Content="Delete" VerticalAlignment="Bottom" IsEnabled="False"
+                    Click="DeleteConnection_Click" AutomationProperties.Name="Delete saved connection" />
+            <CheckBox x:Name="RememberBox" Content="Remember password" VerticalAlignment="Bottom"
+                      AutomationProperties.Name="Remember password in the Windows Credential Locker" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
             <ComboBox x:Name="ProtocolBox" Header="Protocol" Width="100" SelectionChanged="Protocol_Changed">
                 <ComboBoxItem Content="SFTP" />
@@ -55,6 +66,7 @@
             <PasswordBox x:Name="PasswordBox" Header="Password" Width="160" KeyDown="Connect_KeyDown" />
             <Button x:Name="ConnectButton" Content="Connect" VerticalAlignment="Bottom"
                     Style="{StaticResource AccentButtonStyle}" Click="Connect_Click" />
+        </StackPanel>
         </StackPanel>
 
         <!-- Remote -->

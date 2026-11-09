@@ -38,7 +38,11 @@ Use Windows Settings > Apps, or run the one-liner above with `-Uninstall`.
 
 ## About
 
-Winzilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license.
+Winzilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license, and use **Check for updates** to look for a new release on demand.
+
+## Saved connections
+
+The WinUI 3 app can store multiple FTP/SFTP connections (name, protocol, host, port, user) in `%APPDATA%\Winzilla\settings.json`. Tick **Remember password** to save the password in the Windows Password Vault (PasswordVault, tied to your Windows account); passwords are never written to `settings.json`.
 
 ## Updates
 

@@ -14,6 +14,7 @@ public sealed class Settings
     public string Host { get; set; } = "";
     public int Port { get; set; } = 22;
     public string User { get; set; } = "";
+    public List<SavedConnection> Connections { get; set; } = [];
     public Dictionary<string, string> KnownHosts { get; set; } = [];
 
     public static Settings Load()

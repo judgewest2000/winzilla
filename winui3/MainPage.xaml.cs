@@ -39,6 +39,7 @@ public sealed partial class MainPage : Page
         PortBox.Text = _settings.Port.ToString();
         UserBox.Text = _settings.User;
         UpdateSortHeaders();
+        SelectLastUsedConnection();
         Loaded += async (_, _) => await CheckForUpdateAsync();
     }
 
@@ -47,7 +48,12 @@ public sealed partial class MainPage : Page
         UpdateInfo? update;
         try { update = await UpdateService.CheckAsync(CancellationToken.None); }
         catch { return; }
-        if (update is null || XamlRoot is null) return;
+        if (update is not null) await OfferUpdateAsync(update);
+    }
+
+    private async Task OfferUpdateAsync(UpdateInfo update)
+    {
+        if (XamlRoot is null) return;
 
         var prompt = new ContentDialog
         {
@@ -82,6 +88,109 @@ public sealed partial class MainPage : Page
 
     // ---------- Connection form ----------
 
+    private (Protocol Protocol, string Host, int Port, string User) ReadForm()
+    {
+        var protocol = ProtocolBox.SelectedIndex == 0 ? Protocol.Sftp : Protocol.Ftp;
+        if (!int.TryParse(PortBox.Text, out int port) || port is < 1 or > 65535)
+            port = protocol == Protocol.Sftp ? 22 : 21;
+        return (protocol, HostBox.Text.Trim(), port, UserBox.Text.Trim());
+    }
+
+    private void SelectLastUsedConnection()
+    {
+        var (protocol, host, port, user) = ReadForm();
+        var match = _settings.Connections.FirstOrDefault(c =>
+            c.Protocol == protocol && c.Host == host && c.Port == port && c.User == user);
+        RefreshSavedConnections(match?.Id);
+        if (match is not null) LoadConnectionIntoForm(match);
+    }
+
+    private void RefreshSavedConnections(string? selectedId)
+    {
+        SavedBox.SelectionChanged -= SavedBox_Changed;
+        SavedBox.Items.Clear();
+        SavedBox.Items.Add("(New connection)");
+        foreach (var c in _settings.Connections) SavedBox.Items.Add(c.Name);
+        int index = _settings.Connections.FindIndex(c => c.Id == selectedId);
+        SavedBox.SelectedIndex = index + 1;
+        DeleteSavedButton.IsEnabled = index >= 0;
+        SavedBox.SelectionChanged += SavedBox_Changed;
+    }
+
+    private void LoadConnectionIntoForm(SavedConnection c)
+    {
+        ProtocolBox.SelectedIndex = (int)c.Protocol;
+        HostBox.Text = c.Host;
+        PortBox.Text = c.Port.ToString();
+        UserBox.Text = c.User;
+        var password = CredentialStore.Get(c.Id);
+        PasswordBox.Password = password ?? "";
+        RememberBox.IsChecked = password is not null;
+    }
+
+    private void ClearForm()
+    {
+        ProtocolBox.SelectedIndex = 0;
+        HostBox.Text = "";
+        PortBox.Text = "22";
+        UserBox.Text = "";
+        PasswordBox.Password = "";
+        RememberBox.IsChecked = false;
+    }
+
+    private void SavedBox_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        int index = SavedBox.SelectedIndex - 1;
+        DeleteSavedButton.IsEnabled = index >= 0;
+        if (index >= 0) LoadConnectionIntoForm(_settings.Connections[index]);
+        else if (SavedBox.SelectedIndex == 0) ClearForm();
+    }
+
+    private async void SaveConnection_Click(object sender, RoutedEventArgs e)
+    {
+        var (protocol, host, port, user) = ReadForm();
+        if (host.Length == 0) { SetStatus("Enter a host."); return; }
+
+        int index = SavedBox.SelectedIndex - 1;
+        var existing = index >= 0 ? _settings.Connections[index] : null;
+        var name = await PromptAsync("Save connection", existing?.Name ?? (user.Length > 0 ? $"{user}@{host}" : host));
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        var saved = new SavedConnection(existing?.Id ?? Guid.NewGuid().ToString("N"), name.Trim(), protocol, host, port, user);
+        try
+        {
+            if (RememberBox.IsChecked == true) CredentialStore.Set(saved.Id, PasswordBox.Password);
+            else CredentialStore.Remove(saved.Id);
+        }
+        catch (Exception ex)
+        {
+            await ShowMessageAsync("Couldn't store the password", ex.Message);
+            return;
+        }
+
+        if (existing is null) _settings.Connections.Add(saved);
+        else _settings.Connections[index] = saved;
+        _settings.Save();
+        RefreshSavedConnections(saved.Id);
+        SetStatus($"Saved \"{saved.Name}\"");
+    }
+
+    private async void DeleteConnection_Click(object sender, RoutedEventArgs e)
+    {
+        int index = SavedBox.SelectedIndex - 1;
+        if (index < 0) return;
+
+        var connection = _settings.Connections[index];
+        if (!await ConfirmAsync("Delete connection", $"Delete \"{connection.Name}\" and its saved password?")) return;
+
+        CredentialStore.Remove(connection.Id);
+        _settings.Connections.RemoveAt(index);
+        _settings.Save();
+        RefreshSavedConnections(null);
+        ClearForm();
+        SetStatus($"Deleted \"{connection.Name}\"");
+    }
+
     private void Protocol_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (PortBox is null) return;
@@ -103,12 +212,8 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        string host = HostBox.Text.Trim();
+        var (protocol, host, port, user) = ReadForm();
         if (host.Length == 0) { SetStatus("Enter a host."); return; }
-        var protocol = ProtocolBox.SelectedIndex == 0 ? Protocol.Sftp : Protocol.Ftp;
-        if (!int.TryParse(PortBox.Text, out int port) || port is < 1 or > 65535)
-            port = protocol == Protocol.Sftp ? 22 : 21;
-        string user = UserBox.Text.Trim();
         var conn = new ConnectionSettings(protocol, host, port, user, PasswordBox.Password);
 
         _settings.Protocol = protocol;
@@ -198,13 +303,35 @@ public sealed partial class MainPage : Page
             NavigateUri = new Uri("https://github.com/judgewest2000/winzilla"),
             Padding = new Thickness(0),
         });
-        await new ContentDialog
+
+        UpdateInfo? found = null;
+        var result = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var checkButton = new Button { Content = "Check for updates" };
+        var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
             Title = "About Winzilla",
             Content = panel,
             CloseButtonText = "OK",
-        }.ShowAsync();
+        };
+        checkButton.Click += async (_, _) =>
+        {
+            checkButton.IsEnabled = false;
+            result.Text = "Checking…";
+            try
+            {
+                found = await UpdateService.CheckAsync(CancellationToken.None);
+                if (found is null) result.Text = "You're up to date.";
+                else dialog.Hide();
+            }
+            catch (Exception ex) { result.Text = $"Couldn't check for updates: {ex.Message}"; }
+            finally { checkButton.IsEnabled = true; }
+        };
+        panel.Children.Add(checkButton);
+        panel.Children.Add(result);
+
+        await dialog.ShowAsync();
+        if (found is not null) await OfferUpdateAsync(found);
     }
 
     private async Task ShowMessageAsync(string title, string message)
