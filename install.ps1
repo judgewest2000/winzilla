@@ -84,6 +84,7 @@ $shell = New-Object -ComObject WScript.Shell
 $lnk = $shell.CreateShortcut($startMenu)
 $lnk.TargetPath = $exePath
 $lnk.WorkingDirectory = $InstallDir
+$lnk.IconLocation = "$exePath,0"
 $lnk.Save()
 
 $ver = $release.tag_name.TrimStart('v')
