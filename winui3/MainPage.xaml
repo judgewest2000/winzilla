@@ -139,10 +139,12 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="160" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="StatusText" Text="Ready" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <ProgressBar Grid.Column="1" x:Name="Progress" IsIndeterminate="True" Visibility="Collapsed" />
             <Button Grid.Column="2" x:Name="CancelButton" Content="Cancel" Visibility="Collapsed" Click="Cancel_Click" />
+            <HyperlinkButton Grid.Column="3" x:Name="AboutButton" Content="About" AutomationProperties.Name="About Winzilla" Click="About_Click" />
         </Grid>
     </Grid>
 </Page>

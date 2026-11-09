@@ -39,6 +39,45 @@ public sealed partial class MainPage : Page
         PortBox.Text = _settings.Port.ToString();
         UserBox.Text = _settings.User;
         UpdateSortHeaders();
+        Loaded += async (_, _) => await CheckForUpdateAsync();
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        UpdateInfo? update;
+        try { update = await UpdateService.CheckAsync(CancellationToken.None); }
+        catch { return; }
+        if (update is null || XamlRoot is null) return;
+
+        var prompt = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Update available",
+            Content = new TextBlock
+            {
+                Text = $"Winzilla {update.Version} is available (you have {UpdateService.CurrentVersion}). Update now? Winzilla will restart.",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = "Update now",
+            CloseButtonText = "Later",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+        if (await prompt.ShowAsync() != ContentDialogResult.Primary) return;
+
+        SetStatus($"Downloading Winzilla {update.Version}...");
+        Progress.Visibility = Visibility.Visible;
+        try
+        {
+            var installer = await UpdateService.DownloadAsync(update, CancellationToken.None);
+            UpdateService.StartInstaller(installer);
+            Application.Current.Exit();
+        }
+        catch (Exception ex)
+        {
+            Progress.Visibility = Visibility.Collapsed;
+            SetStatus("Update failed");
+            await ShowMessageAsync("Update failed", ex.Message);
+        }
     }
 
     // ---------- Connection form ----------
@@ -142,6 +181,31 @@ public sealed partial class MainPage : Page
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => _cts.Cancel();
+
+    private async void About_Click(object sender, RoutedEventArgs e)
+    {
+        if (XamlRoot is null) return;
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3);
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"Version {version}\nA lightweight FTP and SFTP file-transfer client.\n\nCopyright (c) 2026 James West\nReleased under the MIT License.",
+            TextWrapping = TextWrapping.Wrap,
+        });
+        panel.Children.Add(new HyperlinkButton
+        {
+            Content = "github.com/judgewest2000/winzilla",
+            NavigateUri = new Uri("https://github.com/judgewest2000/winzilla"),
+            Padding = new Thickness(0),
+        });
+        await new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "About Winzilla",
+            Content = panel,
+            CloseButtonText = "OK",
+        }.ShowAsync();
+    }
 
     private async Task ShowMessageAsync(string title, string message)
     {

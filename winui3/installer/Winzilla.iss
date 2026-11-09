@@ -44,3 +44,14 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; Flags: unchecked
 
 [Run]
 Filename: "{app}\Winzilla.exe"; Description: "Launch Winzilla"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Winzilla.exe"; Flags: nowait runasoriginaluser; Check: ShouldRelaunch
+
+[Registry]
+; Remove the Apps & Features entry written by install.ps1 so only this installer's entry remains.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\Winzilla"; Flags: deletekey
+
+[Code]
+function ShouldRelaunch: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;

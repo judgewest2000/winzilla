@@ -36,6 +36,14 @@ Download `Winzilla-Setup-<arch>.exe` from the [latest release](https://github.co
 
 Use Windows Settings > Apps, or run the one-liner above with `-Uninstall`.
 
+## About
+
+Winzilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license.
+
+## Updates
+
+On startup, the WinUI 3 app checks GitHub for a newer release and asks whether to update. Updating downloads the matching `Winzilla-Setup-<arch>.exe`, verifies its SHA-256 checksum, upgrades in place and restarts the app.
+
 ## Build from source
 
 Requires the .NET 10 SDK.
