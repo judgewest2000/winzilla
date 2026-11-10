@@ -268,6 +268,7 @@ public sealed partial class MainPage : Page
         ClearOwnClipboard();
         RemoteList.ItemsSource = null;
         _remoteItems = [];
+        RemoteFilterBox.Text = "";
         RemotePathBox.Text = "";
         RemoteTitle.Text = "Remote (not connected)";
         ConnectButton.Content = "Connect";
@@ -474,10 +475,25 @@ public sealed partial class MainPage : Page
     private async Task LoadRemoteAsync(string path, CancellationToken ct)
     {
         if (_client is null) return;
-        _remoteItems = await _client.ListAsync(path, ct);
+        var items = await _client.ListAsync(path, ct);
+        // A filter only applies to the folder it was typed in.
+        if (path != _remotePath) RemoteFilterBox.Text = "";
+        _remoteItems = items;
         _remotePath = path;
         RemotePathBox.Text = path;
         ApplySort();
+    }
+
+    private void RemoteFilter_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_client is not null) ApplySort();
+    }
+
+    private void RemoteFilter_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape) return;
+        RemoteFilterBox.Text = "";
+        e.Handled = true;
     }
 
     private void Sort_Click(object sender, RoutedEventArgs e)
@@ -490,7 +506,11 @@ public sealed partial class MainPage : Page
 
     private void ApplySort()
     {
-        RemoteList.ItemsSource = FileEntry.Sort(_remoteItems, _sortColumn, _sortAscending);
+        string filter = RemoteFilterBox.Text.Trim();
+        var shown = filter.Length == 0
+            ? _remoteItems
+            : _remoteItems.Where(i => i.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        RemoteList.ItemsSource = FileEntry.Sort(shown, _sortColumn, _sortAscending);
         UpdateSortHeaders();
     }
 

@@ -90,7 +90,12 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock x:Name="RemoteTitle" Text="Remote (not connected)" Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <Grid>
+                <TextBlock x:Name="RemoteTitle" Text="Remote (not connected)" Style="{StaticResource BodyStrongTextBlockStyle}"
+                           VerticalAlignment="Center" />
+                <TextBox x:Name="RemoteFilterBox" HorizontalAlignment="Right" Width="220" PlaceholderText="Filter this folder"
+                         AutomationProperties.Name="Filter files" TextChanged="RemoteFilter_TextChanged" KeyDown="RemoteFilter_KeyDown" />
+            </Grid>
             <Grid Grid.Row="1" ColumnSpacing="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
