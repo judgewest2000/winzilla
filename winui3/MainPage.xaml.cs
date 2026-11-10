@@ -289,6 +289,28 @@ public sealed partial class MainPage : Page
 
     private void ClearLog_Click(object sender, RoutedEventArgs e) => _log.Clear();
 
+    private async void ExportLog_Click(object sender, RoutedEventArgs e)
+    {
+        if (_log.Count == 0)
+        {
+            SetStatus("The command log is empty.");
+            return;
+        }
+
+        var picker = new FileSavePicker { SuggestedFileName = $"winzilla-log-{DateTime.Now:yyyyMMdd-HHmmss}" };
+        picker.FileTypeChoices.Add("Text file", [".txt"]);
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+        var file = await picker.PickSaveFileAsync();
+        if (file is null) return;
+
+        try
+        {
+            await File.WriteAllLinesAsync(file.Path, _log.Select(l => l.Text));
+            SetStatus($"Exported the command log to {file.Path}");
+        }
+        catch (Exception ex) { SetStatus($"Couldn't export the log: {ex.Message}"); }
+    }
+
     private Task<T> OnUiThreadAsync<T>(Func<Task<T>> work)
     {
         if (DispatcherQueue.HasThreadAccess) return work();

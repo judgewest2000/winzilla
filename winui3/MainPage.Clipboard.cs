@@ -10,10 +10,8 @@ namespace Winzilla;
 
 public sealed partial class MainPage
 {
-    private const string ClipFormat = "Winzilla.RemoteItems";
-
-    /// <summary>What this app last put on the clipboard, so pasting back into the app can skip the round trip through temp files.</summary>
-    private sealed record ClipState(string Id, List<FileEntry> Items, string SourceDir, bool IsCut, PendingDownload Download);
+    /// <summary>What this app last put on the clipboard, so pasting back into the app can skip the round trip through Explorer.</summary>
+    private sealed record ClipState(RemoteClipboard Session, List<FileEntry> Items, string SourceDir, bool IsCut);
 
     private ClipState? _clip;
 
@@ -41,23 +39,18 @@ public sealed partial class MainPage
         var items = SelectedEntries();
         if (client is null || items.Count == 0) return;
 
-        // The files are only downloaded once something (Explorer, or a paste back into this app) asks for them.
-        var download = CreateDownload(items, client);
-        var clip = new ClipState(Guid.NewGuid().ToString("N"), items, _remotePath, cut, download);
-        var data = new DataPackage();
-        data.SetData(ClipFormat, clip.Id);
-        SetStorageProvider(data, download, cut ? DataPackageOperation.Move : DataPackageOperation.Copy);
-        if (cut)
+        // Nothing is downloaded here. Explorer pulls the bytes from the server when the user pastes.
+        ClipState? clip = null;
+        var session = new RemoteClipboard(items, client, cut,
+            (node, ct) => OpenForClipboardAsync(client, node, ct),
+            () => _ = OnUiThreadAsync(async () => { await DeleteMovedAsync(client, clip!); return true; }));
+        session.Ended += () => DispatcherQueue.TryEnqueue(() =>
         {
-            data.OperationCompleted += (s, args) =>
-            {
-                // Explorer reports a completed move once it has pasted the files; only then is the remote copy removed.
-                if (args.Operation == DataPackageOperation.Move && download.Succeeded)
-                    _ = OnUiThreadAsync(async () => { await DeleteMovedAsync(client, clip); return true; });
-            };
-        }
+            if (_clip?.Session == session) _clip = null;
+        });
+        clip = new ClipState(session, items, _remotePath, cut);
 
-        try { Clipboard.SetContent(data); }
+        try { session.Start(); }
         catch (Exception ex)
         {
             SetStatus($"Couldn't use the clipboard: {ex.Message}");
@@ -67,10 +60,37 @@ public sealed partial class MainPage
         SetStatus($"{(cut ? "Cut" : "Copied")} {items.Count} item(s)");
     }
 
+    private Task<OpenedRemote> OpenForClipboardAsync(IRemoteClient client, RemoteNode node, CancellationToken sessionCt)
+    {
+        var opened = new TaskCompletionSource<OpenedRemote>();
+        var finished = new TaskCompletionSource();
+
+        // Runs as a normal operation so the progress panel and Cancel button cover the paste; it ends when Explorer closes the file.
+        _ = OnUiThreadAsync(() => RunOpAsync(async ct =>
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, sessionCt);
+            try
+            {
+                var raw = await client.OpenReadAsync(node.RemotePath, linked.Token);
+                _transfer.Begin(node.RemotePath, "Windows Explorer", node.Size);
+                SetStatus($"Sending {Path.GetFileName(node.RelativePath)}");
+                opened.SetResult(new OpenedRemote(_transfer.Wrap(raw, linked.Token), () => finished.TrySetResult()));
+            }
+            catch (Exception ex)
+            {
+                opened.TrySetException(ex);
+                throw;
+            }
+            using (linked.Token.Register(() => finished.TrySetResult())) await finished.Task;
+        }, showErrors: false));
+        return opened.Task;
+    }
+
     private async Task DeleteMovedAsync(IRemoteClient client, ClipState clip)
     {
         if (!ReferenceEquals(_client, client)) return;
         if (_clip == clip) _clip = null;
+        clip.Session.Stop();
         await RunOpAsync(async ct =>
         {
             foreach (var entry in clip.Items) await client.DeleteAsync(entry, ct);
@@ -80,9 +100,9 @@ public sealed partial class MainPage
 
     private void ClearOwnClipboard()
     {
-        if (_clip is null) return;
+        if (_clip is not { } clip) return;
         _clip = null;
-        try { Clipboard.Clear(); } catch { }
+        clip.Session.Stop();
     }
 
     // ---------- Paste ----------
@@ -104,16 +124,16 @@ public sealed partial class MainPage
     private async Task PasteAsync()
     {
         var client = _client;
-        var view = GetClipboardView();
-        if (client is null || view is null) return;
+        if (client is null) return;
 
-        if (_clip is { } clip && view.Contains(ClipFormat) && await view.GetDataAsync(ClipFormat) is string id && id == clip.Id)
+        if (_clip is { } clip && RemoteClipboard.IsOnClipboard)
         {
             await PasteOwnAsync(client, clip);
             return;
         }
 
-        if (!view.Contains(StandardDataFormats.StorageItems))
+        var view = GetClipboardView();
+        if (view is null || !view.Contains(StandardDataFormats.StorageItems))
         {
             SetStatus("Nothing to paste.");
             return;
@@ -160,7 +180,7 @@ public sealed partial class MainPage
             return;
         }
 
-        try { await UploadPathsAsync(await clip.Download.GetAsync()); }
+        try { await UploadPathsAsync(await CreateDownload(clip.Items, client).GetAsync()); }
         catch (Exception ex) { SetStatus($"Couldn't paste: {ex.Message}"); }
     }
 
@@ -214,8 +234,8 @@ public sealed partial class MainPage
         MenuDownload.IsEnabled = any;
         MenuUpload.IsEnabled = connected;
         MenuCut.IsEnabled = MenuCopy.IsEnabled = MenuDelete.IsEnabled = MenuProperties.IsEnabled = any;
-        MenuPaste.IsEnabled = connected && view is not null
-            && (view.Contains(ClipFormat) || view.Contains(StandardDataFormats.StorageItems));
+        MenuPaste.IsEnabled = connected
+            && (_clip is not null && RemoteClipboard.IsOnClipboard || view is not null && view.Contains(StandardDataFormats.StorageItems));
         MenuRename.IsEnabled = connected && selected.Count == 1;
         MenuNewFolder.IsEnabled = MenuRefresh.IsEnabled = connected;
     }

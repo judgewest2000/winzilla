@@ -236,8 +236,12 @@
             </Grid.RowDefinitions>
             <Grid>
                 <TextBlock Text="Command log" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
-                <HyperlinkButton Content="Clear" HorizontalAlignment="Right" Padding="4,0" Click="ClearLog_Click"
-                                 AutomationProperties.Name="Clear command log" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <HyperlinkButton Content="Export" Padding="4,0" Click="ExportLog_Click"
+                                     AutomationProperties.Name="Export command log" />
+                    <HyperlinkButton Content="Clear" Padding="4,0" Click="ClearLog_Click"
+                                     AutomationProperties.Name="Clear command log" />
+                </StackPanel>
             </Grid>
             <ListView Grid.Row="1" x:Name="LogList" SelectionMode="None" ItemTemplate="{StaticResource LogRow}"
                       ItemContainerStyle="{StaticResource LogItem}" AutomationProperties.Name="Command log"

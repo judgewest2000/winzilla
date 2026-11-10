@@ -69,6 +69,21 @@ public sealed class FtpRemoteClient : IRemoteClient
         await c.DownloadStream(fs, remotePath, token: ct);
     }, ct);
 
+    public async Task<Stream> OpenReadAsync(string remotePath, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct);
+        try
+        {
+            var stream = await Client.OpenRead(remotePath, token: ct);
+            return new GatedStream(stream, _gate);
+        }
+        catch
+        {
+            _gate.Release();
+            throw;
+        }
+    }
+
     public Task UploadFileAsync(string localPath, string remotePath, TransferProgress progress, CancellationToken ct) => RunAsync(async c =>
     {
         await using var fs = progress.Wrap(File.OpenRead(localPath), ct);

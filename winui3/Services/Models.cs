@@ -81,6 +81,9 @@ public interface IRemoteClient : IAsyncDisposable
     Task<string> GetHomeAsync(CancellationToken ct);
     Task<IReadOnlyList<FileEntry>> ListAsync(string path, CancellationToken ct);
     Task DownloadFileAsync(string remotePath, string localPath, TransferProgress progress, CancellationToken ct);
+
+    /// <summary>Opens a remote file for sequential reading. The connection stays busy until the stream is disposed.</summary>
+    Task<Stream> OpenReadAsync(string remotePath, CancellationToken ct);
     Task UploadFileAsync(string localPath, string remotePath, TransferProgress progress, CancellationToken ct);
     Task CreateDirectoryAsync(string path, CancellationToken ct);
     Task DeleteAsync(FileEntry entry, CancellationToken ct);

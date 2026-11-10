@@ -90,6 +90,22 @@ public sealed class SftpRemoteClient(Settings settings) : IRemoteClient
         Say("Response", "Transfer complete");
     }, ct);
 
+    public async Task<Stream> OpenReadAsync(string remotePath, CancellationToken ct)
+    {
+        await _gate.WaitAsync(ct);
+        try
+        {
+            Say("Command", $"get {remotePath}");
+            var stream = await Task.Run(() => Client.OpenRead(remotePath), ct);
+            return new GatedStream(stream, _gate);
+        }
+        catch
+        {
+            _gate.Release();
+            throw;
+        }
+    }
+
     public Task UploadFileAsync(string localPath, string remotePath, TransferProgress progress, CancellationToken ct) => RunAsync(c =>
     {
         Say("Command", $"put {remotePath}");
