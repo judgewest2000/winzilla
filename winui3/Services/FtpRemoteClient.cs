@@ -7,7 +7,19 @@ public sealed class FtpRemoteClient : IRemoteClient
     private AsyncFtpClient? _client;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    public Action<string>? Log { get; set; }
+
     private AsyncFtpClient Client => _client ?? throw new InvalidOperationException("Not connected.");
+
+    private sealed class CommandLogger(FtpRemoteClient owner) : IFtpLogger
+    {
+        public void Log(FtpLogEntry entry)
+        {
+            var message = entry.Message?.Trim();
+            if (string.IsNullOrEmpty(message) || message.StartsWith("Command:", StringComparison.Ordinal) && message.Contains("PASS ")) return;
+            owner.Log?.Invoke(message);
+        }
+    }
 
     private async Task<T> RunAsync<T>(Func<AsyncFtpClient, Task<T>> work, CancellationToken ct)
     {
@@ -21,7 +33,7 @@ public sealed class FtpRemoteClient : IRemoteClient
 
     public async Task ConnectAsync(ConnectionSettings s, CancellationToken ct)
     {
-        var client = new AsyncFtpClient(s.Host, s.User, s.Password, s.Port);
+        var client = new AsyncFtpClient(s.Host, s.User, s.Password, s.Port) { Logger = new CommandLogger(this) };
         client.Config.EncryptionMode = FtpEncryptionMode.None;
         client.Config.DataConnectionType = FtpDataConnectionType.AutoPassive;
         await client.Connect(ct);
@@ -51,15 +63,15 @@ public sealed class FtpRemoteClient : IRemoteClient
         return FileEntry.Sort(list).ToList();
     }, ct);
 
-    public Task DownloadFileAsync(string remotePath, string localPath, CancellationToken ct) => RunAsync(async c =>
+    public Task DownloadFileAsync(string remotePath, string localPath, TransferProgress progress, CancellationToken ct) => RunAsync(async c =>
     {
-        await using var fs = File.Create(localPath);
+        await using var fs = progress.Wrap(File.Create(localPath), ct);
         await c.DownloadStream(fs, remotePath, token: ct);
     }, ct);
 
-    public Task UploadFileAsync(string localPath, string remotePath, CancellationToken ct) => RunAsync(async c =>
+    public Task UploadFileAsync(string localPath, string remotePath, TransferProgress progress, CancellationToken ct) => RunAsync(async c =>
     {
-        await using var fs = File.OpenRead(localPath);
+        await using var fs = progress.Wrap(File.OpenRead(localPath), ct);
         await c.UploadStream(fs, remotePath, FtpRemoteExists.Overwrite, false, null, ct);
     }, ct);
 

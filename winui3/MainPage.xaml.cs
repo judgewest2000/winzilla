@@ -1,6 +1,8 @@
+using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -12,7 +14,7 @@ namespace Winzilla;
 
 public sealed partial class MainPage : Page
 {
-    private sealed record DragState(List<FileEntry> Items);
+    private const int MaxLogLines = 1000;
 
     private static readonly string TempRoot = Path.Combine(Path.GetTempPath(), "Winzilla");
 
@@ -24,9 +26,12 @@ public sealed partial class MainPage : Page
     private IReadOnlyList<FileEntry> _remoteItems = [];
     private SortColumn _sortColumn = SortColumn.Name;
     private bool _sortAscending = true;
-    private DragState? _drag;
+    private PendingDownload? _drag;
     private int _busy;
     private CancellationTokenSource _cts = new();
+    private readonly TransferProgress _transfer = new();
+    private readonly DispatcherTimer _transferTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private readonly ObservableCollection<LogLine> _log = [];
 
     public MainPage()
     {
@@ -34,6 +39,8 @@ public sealed partial class MainPage : Page
 
         try { if (Directory.Exists(TempRoot)) Directory.Delete(TempRoot, true); } catch { }
 
+        LogList.ItemsSource = _log;
+        _transferTimer.Tick += (_, _) => UpdateTransferUi();
         ProtocolBox.SelectedIndex = (int)_settings.Protocol;
         HostBox.Text = _settings.Host;
         PortBox.Text = _settings.Port.ToString();
@@ -223,6 +230,7 @@ public sealed partial class MainPage : Page
         _settings.Save();
 
         IRemoteClient client = protocol == Protocol.Sftp ? new SftpRemoteClient(_settings) : new FtpRemoteClient();
+        client.Log = LogCommand;
         ConnectButton.IsEnabled = false;
         bool connected = false;
         try
@@ -248,6 +256,7 @@ public sealed partial class MainPage : Page
         ConnectButton.Content = "Disconnect";
         RemoteTitle.Text = $"Remote ({user}@{host})";
         SetStatus($"Connected to {host}");
+        RemoteList.Focus(FocusState.Programmatic);
     }
 
     private async Task DisconnectAsync()
@@ -255,6 +264,8 @@ public sealed partial class MainPage : Page
         var client = _client;
         _client = null;
         if (client is not null) await client.DisposeAsync();
+        LogCommand("Status: Disconnected");
+        ClearOwnClipboard();
         RemoteList.ItemsSource = null;
         _remoteItems = [];
         RemotePathBox.Text = "";
@@ -263,26 +274,83 @@ public sealed partial class MainPage : Page
         SetStatus("Disconnected");
     }
 
-    // ---------- Busy / status ----------
+    // ---------- Busy / status / log ----------
 
     private void SetStatus(string text) =>
         DispatcherQueue.TryEnqueue(() => StatusText.Text = text);
 
-    private async Task RunOpAsync(Func<CancellationToken, Task> work)
+    private void LogCommand(string line) => DispatcherQueue.TryEnqueue(() =>
     {
-        if (_busy++ == 0) _cts = new CancellationTokenSource();
+        var entry = new LogLine(line);
+        _log.Add(entry);
+        if (_log.Count > MaxLogLines) _log.RemoveAt(0);
+        LogList.ScrollIntoView(entry);
+    });
+
+    private void ClearLog_Click(object sender, RoutedEventArgs e) => _log.Clear();
+
+    private Task<T> OnUiThreadAsync<T>(Func<Task<T>> work)
+    {
+        if (DispatcherQueue.HasThreadAccess) return work();
+
+        var tcs = new TaskCompletionSource<T>();
+        if (!DispatcherQueue.TryEnqueue(async () =>
+        {
+            try { tcs.SetResult(await work()); }
+            catch (Exception ex) { tcs.SetException(ex); }
+        })) tcs.SetException(new InvalidOperationException("The window is closing."));
+        return tcs.Task;
+    }
+
+    /// <summary>Runs <paramref name="work"/> with the busy indicators shown. Returns false if it failed or was cancelled.</summary>
+    private async Task<bool> RunOpAsync(Func<CancellationToken, Task> work, bool showErrors = true)
+    {
+        if (_busy++ == 0)
+        {
+            _cts = new CancellationTokenSource();
+            _transfer.Reset();
+            _transferTimer.Start();
+        }
         Progress.Visibility = CancelButton.Visibility = Visibility.Visible;
-        try { await work(_cts.Token); }
+        try
+        {
+            await work(_cts.Token);
+            return true;
+        }
         catch (OperationCanceledException) { SetStatus("Cancelled"); }
         catch (Exception ex)
         {
             SetStatus($"Error: {ex.Message}");
-            await ShowMessageAsync("Error", ex.Message);
+            LogCommand($"Error: {ex.Message}");
+            if (showErrors) await ShowMessageAsync("Error", ex.Message);
         }
         finally
         {
-            if (--_busy == 0) Progress.Visibility = CancelButton.Visibility = Visibility.Collapsed;
+            if (--_busy == 0)
+            {
+                _transferTimer.Stop();
+                _transfer.Reset();
+                Progress.Visibility = CancelButton.Visibility = TransferPanel.Visibility = Visibility.Collapsed;
+            }
         }
+        return false;
+    }
+
+    private void UpdateTransferUi()
+    {
+        bool active = _transfer.Source is not null && _busy > 0;
+        TransferPanel.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
+        Progress.Visibility = _busy > 0 && !active ? Visibility.Visible : Visibility.Collapsed;
+        if (!active) return;
+
+        long total = _transfer.Total, done = _transfer.Transferred;
+        double percent = total > 0 ? Math.Min(100, done * 100.0 / total) : 0;
+        TransferPath.Text = $"{_transfer.Source}  →  {_transfer.Target}";
+        TransferElapsed.Text = TransferProgress.FormatDuration(_transfer.Elapsed) + " elapsed";
+        TransferLeft.Text = (_transfer.Remaining is { } left ? TransferProgress.FormatDuration(left) : "--:--:--") + " left";
+        TransferBar.Value = percent;
+        TransferBytes.Text = $"{FileEntry.FormatSize(done)} of {FileEntry.FormatSize(total)} " +
+            $"({percent:0.0}%, {TransferProgress.FormatRate(_transfer.BytesPerSecond)})";
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => _cts.Cancel();
@@ -488,6 +556,8 @@ public sealed partial class MainPage : Page
         });
     }
 
+    private List<FileEntry> SelectedEntries() => RemoteList.SelectedItems.OfType<FileEntry>().ToList();
+
     // ---------- Transfers ----------
 
     private async void Upload_Click(object sender, RoutedEventArgs e)
@@ -500,25 +570,22 @@ public sealed partial class MainPage : Page
         await UploadPathsAsync(files.Select(f => f.Path).ToList());
     }
 
-    private async Task UploadPathsAsync(List<string> paths)
+    private async Task<bool> UploadPathsAsync(List<string> paths)
     {
         var client = _client;
-        if (client is null || paths.Count == 0) return;
-        await RunOpAsync(async ct =>
+        if (client is null || paths.Count == 0) return false;
+        return await RunOpAsync(async ct =>
         {
             string target = _remotePath;
             foreach (var p in paths)
-                await TransferService.UploadAsync(client, p, target, SetStatus, ct);
+                await TransferService.UploadAsync(client, p, target, SetStatus, _transfer, ct);
             SetStatus($"Uploaded {paths.Count} item(s)");
             await LoadRemoteAsync(_remotePath, ct);
         });
     }
 
-    private async void Download_Click(object sender, RoutedEventArgs e)
-    {
-        var entries = RemoteList.SelectedItems.OfType<FileEntry>().ToList();
-        await DownloadEntriesAsync(entries);
-    }
+    private async void Download_Click(object sender, RoutedEventArgs e) =>
+        await DownloadEntriesAsync(SelectedEntries());
 
     private async Task DownloadEntriesAsync(List<FileEntry> entries)
     {
@@ -528,10 +595,27 @@ public sealed partial class MainPage : Page
         {
             Directory.CreateDirectory(_downloadPath);
             foreach (var entry in entries)
-                await TransferService.DownloadAsync(client, entry, _downloadPath, SetStatus, ct);
+                await TransferService.DownloadAsync(client, entry, _downloadPath, SetStatus, _transfer, ct);
             SetStatus($"Downloaded {entries.Count} item(s) to {_downloadPath}");
         });
     }
+
+    /// <summary>Downloads <paramref name="items"/> to a temp folder for the shell to pick up (drag out, copy, cut).</summary>
+    private PendingDownload CreateDownload(List<FileEntry> items, IRemoteClient client) => new(async ct =>
+    {
+        var paths = new List<string>();
+        bool ok = await OnUiThreadAsync(() => RunOpAsync(async opCt =>
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(opCt, ct);
+            string temp = Path.Combine(TempRoot, Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(temp);
+            foreach (var item in items)
+                await TransferService.DownloadAsync(client, item, temp, SetStatus, _transfer, linked.Token);
+            paths.AddRange(items.Select(i => Path.Combine(temp, i.Name)));
+            SetStatus($"Downloaded {items.Count} item(s)");
+        }, showErrors: false));
+        return ok ? paths : throw new InvalidOperationException("The download failed or was cancelled.");
+    });
 
     // ---------- Drag & drop ----------
 
@@ -539,44 +623,29 @@ public sealed partial class MainPage : Page
     {
         var client = _client;
         var items = e.Items.OfType<FileEntry>().ToList();
-        _drag = new DragState(items);
-        if (client is null) { e.Cancel = true; return; }
+        if (client is null || items.Count == 0) { e.Cancel = true; return; }
 
-        // Files are only downloaded if the drop target (e.g. Explorer) actually asks for them.
-        SetStorageProvider(e.Data, async ct =>
-        {
-            string temp = Path.Combine(TempRoot, Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(temp);
-            if (_busy++ == 0) _cts = new CancellationTokenSource();
-            DispatcherQueue.TryEnqueue(() => Progress.Visibility = CancelButton.Visibility = Visibility.Visible);
-            try
-            {
-                foreach (var item in items)
-                    await TransferService.DownloadAsync(client, item, temp, SetStatus, _cts.Token);
-                SetStatus($"Downloaded {items.Count} item(s)");
-                return items.Select(i => Path.Combine(temp, i.Name)).ToList();
-            }
-            finally
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (--_busy == 0) Progress.Visibility = CancelButton.Visibility = Visibility.Collapsed;
-                });
-            }
-        });
+        // Start downloading right away so the drop target isn't left waiting on a slow transfer.
+        var download = _drag = CreateDownload(items, client);
+        _ = download.GetAsync().ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+        SetStorageProvider(e.Data, download, DataPackageOperation.Copy);
     }
 
-    private void List_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args) => _drag = null;
-
-    private void SetStorageProvider(DataPackage data, Func<CancellationToken, Task<List<string>>> getPaths)
+    private void List_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
     {
-        data.RequestedOperation = DataPackageOperation.Copy;
+        if (args.DropResult == DataPackageOperation.None) _drag?.Cancel();
+        _drag = null;
+    }
+
+    private void SetStorageProvider(DataPackage data, PendingDownload download, DataPackageOperation operation)
+    {
+        data.RequestedOperation = operation;
         data.SetDataProvider(StandardDataFormats.StorageItems, async request =>
         {
             var deferral = request.GetDeferral();
             try
             {
-                var paths = await getPaths(CancellationToken.None);
+                var paths = await download.GetAsync();
                 var storage = new List<IStorageItem>();
                 foreach (var p in paths)
                 {
@@ -585,12 +654,16 @@ public sealed partial class MainPage : Page
                 }
                 request.SetData(storage);
             }
-            catch (Exception ex) { SetStatus($"Drag failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                SetStatus($"Couldn't hand over the files: {ex.Message}");
+                LogCommand($"Error: {ex.Message}");
+            }
             finally { deferral.Complete(); }
         });
     }
 
-    private static async Task<List<string>> GetDroppedPathsAsync(DataPackageView view)
+    private static async Task<List<string>> GetStoragePathsAsync(DataPackageView view)
     {
         var items = await view.GetStorageItemsAsync();
         return items.Select(i => i.Path).Where(p => !string.IsNullOrEmpty(p)).ToList();
@@ -609,7 +682,7 @@ public sealed partial class MainPage : Page
 
         List<string> paths;
         var deferral = e.GetDeferral();
-        try { paths = await GetDroppedPathsAsync(e.DataView); }
+        try { paths = await GetStoragePathsAsync(e.DataView); }
         finally { deferral.Complete(); }
 
         await UploadPathsAsync(paths);

@@ -54,6 +54,11 @@ public sealed class FileEntry
 
 public enum SortColumn { Name, Size, Modified }
 
+public sealed class LogLine(string text)
+{
+    public string Text { get; } = $"{DateTime.Now:HH:mm:ss}  {text}";
+}
+
 public static class RemotePath
 {
     public static string Combine(string dir, string name) =>
@@ -69,11 +74,14 @@ public static class RemotePath
 
 public interface IRemoteClient : IAsyncDisposable
 {
+    /// <summary>Receives one line per command sent to the server. May be called from any thread.</summary>
+    Action<string>? Log { get; set; }
+
     Task ConnectAsync(ConnectionSettings settings, CancellationToken ct);
     Task<string> GetHomeAsync(CancellationToken ct);
     Task<IReadOnlyList<FileEntry>> ListAsync(string path, CancellationToken ct);
-    Task DownloadFileAsync(string remotePath, string localPath, CancellationToken ct);
-    Task UploadFileAsync(string localPath, string remotePath, CancellationToken ct);
+    Task DownloadFileAsync(string remotePath, string localPath, TransferProgress progress, CancellationToken ct);
+    Task UploadFileAsync(string localPath, string remotePath, TransferProgress progress, CancellationToken ct);
     Task CreateDirectoryAsync(string path, CancellationToken ct);
     Task DeleteAsync(FileEntry entry, CancellationToken ct);
     Task RenameAsync(string oldPath, string newPath, CancellationToken ct);

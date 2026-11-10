@@ -34,12 +34,24 @@
             <Setter Property="Padding" Value="4,2" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
+
+        <Style x:Key="LogItem" TargetType="ListViewItem">
+            <Setter Property="MinHeight" Value="20" />
+            <Setter Property="Padding" Value="8,0" />
+        </Style>
+
+        <DataTemplate x:Key="LogRow" x:DataType="svc:LogLine">
+            <TextBlock Text="{x:Bind Text}" FontFamily="Consolas" FontSize="12" IsTextSelectionEnabled="True" />
+        </DataTemplate>
+
     </Page.Resources>
 
     <Grid Padding="12,0,12,12" RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -138,15 +150,103 @@
 
             <ListView Grid.Row="3" x:Name="RemoteList" ItemTemplate="{StaticResource FileRow}"
                       SelectionMode="Extended" CanDragItems="True" IsDoubleTapEnabled="True"
+                      ContextRequested="RemoteList_ContextRequested"
                       AutomationProperties.Name="Remote files"
                       BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                       Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                       DragItemsStarting="RemoteList_DragItemsStarting" DragItemsCompleted="List_DragItemsCompleted"
-                      DoubleTapped="RemoteList_DoubleTapped" KeyDown="RemoteList_KeyDown" />
+                      DoubleTapped="RemoteList_DoubleTapped" KeyDown="RemoteList_KeyDown">
+        <ListView.ContextFlyout><MenuFlyout Opening="RemoteMenu_Opening">
+            <MenuFlyoutItem x:Name="MenuOpen" Text="Open" Click="MenuOpen_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE838;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuDownload" Text="Download" Click="Download_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE896;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuUpload" Text="Upload files…" Click="Upload_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE898;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem x:Name="MenuCut" Text="Cut" KeyboardAcceleratorTextOverride="Ctrl+X" Click="Cut_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8C6;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuCopy" Text="Copy" KeyboardAcceleratorTextOverride="Ctrl+C" Click="Copy_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8C8;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuPaste" Text="Paste" KeyboardAcceleratorTextOverride="Ctrl+V" Click="Paste_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE77F;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem x:Name="MenuRename" Text="Rename" KeyboardAcceleratorTextOverride="F2" Click="RemoteRename_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE70F;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuDelete" Text="Delete" KeyboardAcceleratorTextOverride="Del" Click="RemoteDelete_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem x:Name="MenuNewFolder" Text="New folder" Click="RemoteNewFolder_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8F4;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem x:Name="MenuRefresh" Text="Refresh" KeyboardAcceleratorTextOverride="F5" Click="RemoteRefresh_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE72C;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem x:Name="MenuProperties" Text="Properties" KeyboardAcceleratorTextOverride="Alt+Enter" Click="Properties_Click">
+                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE946;" /></MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+        </MenuFlyout></ListView.ContextFlyout>
+                <ListView.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="C" Modifiers="Control" Invoked="Copy_Invoked" />
+                    <KeyboardAccelerator Key="X" Modifiers="Control" Invoked="Cut_Invoked" />
+                    <KeyboardAccelerator Key="V" Modifiers="Control" Invoked="Paste_Invoked" />
+                    <KeyboardAccelerator Key="F2" Invoked="Rename_Invoked" />
+                    <KeyboardAccelerator Key="F5" Invoked="Refresh_Invoked" />
+                    <KeyboardAccelerator Key="Enter" Modifiers="Menu" Invoked="Properties_Invoked" />
+                </ListView.KeyboardAccelerators>
+            </ListView>
+        </Grid>
+
+        <!-- Transfer progress -->
+        <Grid Grid.Row="2" x:Name="TransferPanel" Visibility="Collapsed" RowSpacing="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock x:Name="TransferPath" TextTrimming="CharacterEllipsis" AutomationProperties.Name="Current transfer" />
+            <Grid Grid.Row="1" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TransferElapsed" MinWidth="120" VerticalAlignment="Center" AutomationProperties.Name="Time elapsed" />
+                <TextBlock Grid.Column="1" x:Name="TransferLeft" MinWidth="100" VerticalAlignment="Center" AutomationProperties.Name="Time left" />
+                <ProgressBar Grid.Column="2" x:Name="TransferBar" Minimum="0" Maximum="100" VerticalAlignment="Center"
+                             AutomationProperties.Name="Transfer progress" />
+                <TextBlock Grid.Column="3" x:Name="TransferBytes" VerticalAlignment="Center" AutomationProperties.Name="Bytes transferred" />
+            </Grid>
+        </Grid>
+
+        <!-- Command log -->
+        <Grid Grid.Row="3" RowSpacing="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="120" />
+            </Grid.RowDefinitions>
+            <Grid>
+                <TextBlock Text="Command log" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center" />
+                <HyperlinkButton Content="Clear" HorizontalAlignment="Right" Padding="4,0" Click="ClearLog_Click"
+                                 AutomationProperties.Name="Clear command log" />
+            </Grid>
+            <ListView Grid.Row="1" x:Name="LogList" SelectionMode="None" ItemTemplate="{StaticResource LogRow}"
+                      ItemContainerStyle="{StaticResource LogItem}" AutomationProperties.Name="Command log"
+                      BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
         </Grid>
 
         <!-- Status -->
-        <Grid Grid.Row="2" ColumnSpacing="8">
+        <Grid Grid.Row="4" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="160" />
