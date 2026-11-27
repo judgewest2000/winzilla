@@ -67,8 +67,8 @@
 
     <Grid>
     <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="280" />
-        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="280" MinWidth="200" />
+        <ColumnDefinition Width="*" MinWidth="480" />
     </Grid.ColumnDefinitions>
 
     <!-- Saved connections, grouped and coloured -->
@@ -99,9 +99,23 @@
         <TextBlock x:Name="EmptyHint" Grid.Row="1" Margin="12" TextWrapping="Wrap" Visibility="Collapsed"
                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                    Text="No groups yet. Create a group (e.g. Production, Develop) and add connections to it." />
-        <TextBlock Grid.Row="2" Padding="8,8,0,0" Text="Double-click a connection to connect" FontSize="12"
-                   TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        <Grid Grid.Row="2" ColumnSpacing="6" Padding="8,4,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Double-click a connection to connect" FontSize="12" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            <Button x:Name="AboutButton" Grid.Column="1" Style="{StaticResource PaneButton}" Background="Transparent" BorderThickness="0"
+                    Click="About_Click" AutomationProperties.Name="About FtpZilla" AutomationProperties.AutomationId="AboutButton"
+                    ToolTipService.ToolTip="About FtpZilla">
+                <FontIcon Glyph="&#xE946;" FontSize="14" />
+            </Button>
+        </Grid>
     </Grid>
+    <views:PaneSplitter Target="0" ShowLine="False" HorizontalAlignment="Right" Canvas.ZIndex="1"
+                        AutomationProperties.Name="Resize connections pane"
+                        ToolTipService.ToolTip="Drag to resize · double-click to reset" />
 
     <Grid Grid.Column="1" Padding="12,0,12,12" RowSpacing="8">
         <Grid.RowDefinitions>
@@ -315,12 +329,10 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="160" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="StatusText" Text="Ready" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <ProgressBar Grid.Column="1" x:Name="Progress" IsIndeterminate="True" Visibility="Collapsed" />
             <Button Grid.Column="2" x:Name="CancelButton" Content="Cancel" Visibility="Collapsed" Click="Cancel_Click" />
-            <HyperlinkButton Grid.Column="3" x:Name="AboutButton" Content="About" AutomationProperties.Name="About FtpZilla" Click="About_Click" />
         </Grid>
     </Grid>
     </Grid>

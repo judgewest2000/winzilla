@@ -602,49 +602,7 @@ public sealed partial class MainPage : Page
     private async void About_Click(object sender, RoutedEventArgs e)
     {
         if (XamlRoot is null) return;
-        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3);
-        var panel = new StackPanel { Spacing = 8, Width = Math.Min(600, Math.Max(0, XamlRoot.Size.Width - 96)) };
-        panel.Children.Add(new TextBlock
-        {
-            Text = $"Version {version}\nA lightweight FTP and SFTP file-transfer client.\n\nCopyright (c) 2026 James West\nReleased under the MIT License.",
-            TextWrapping = TextWrapping.Wrap,
-        });
-        panel.Children.Add(new HyperlinkButton
-        {
-            Content = "github.com/judgewest2000/ftpzilla",
-            NavigateUri = new Uri("https://github.com/judgewest2000/ftpzilla"),
-            Padding = new Thickness(0),
-        });
-
-        UpdateInfo? found = null;
-        var result = new TextBlock { TextWrapping = TextWrapping.Wrap };
-        var checkButton = new Button { Content = "Check for updates" };
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = "About FtpZilla",
-            Content = new ScrollViewer { Content = panel },
-            CloseButtonText = "OK",
-        };
-        dialog.Resources["ContentDialogMaxWidth"] = 800.0;
-        dialog.Resources["ContentDialogMaxHeight"] = Math.Max(0, XamlRoot.Size.Height - 48);
-        checkButton.Click += async (_, _) =>
-        {
-            checkButton.IsEnabled = false;
-            result.Text = "Checking…";
-            try
-            {
-                found = await UpdateService.CheckAsync(CancellationToken.None);
-                if (found is null) result.Text = "You're up to date.";
-                else dialog.Hide();
-            }
-            catch (Exception ex) { result.Text = $"Couldn't check for updates: {ex.Message}"; }
-            finally { checkButton.IsEnabled = true; }
-        };
-        panel.Children.Add(checkButton);
-        panel.Children.Add(result);
-
-        await dialog.ShowAsync();
+        var found = await AboutDialog.ShowAsync(XamlRoot);
         if (found is not null) await OfferUpdateAsync(found);
     }
 

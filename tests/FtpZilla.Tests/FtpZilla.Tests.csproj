@@ -23,6 +23,7 @@
     <Compile Include="..\..\winui3\Services\ConnectionModels.cs" Link="Services\ConnectionModels.cs" />
     <Compile Include="..\..\winui3\Services\SecretProtector.cs" Link="Services\SecretProtector.cs" />
     <Compile Include="..\..\winui3\Services\ConnectionStore.cs" Link="Services\ConnectionStore.cs" />
+    <Compile Include="..\..\winui3\Services\ReleaseNotes.cs" Link="Services\ReleaseNotes.cs" />
   </ItemGroup>
 
 </Project>

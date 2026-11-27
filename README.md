@@ -40,7 +40,9 @@ Use Windows Settings > Apps, or run the one-liner above with `-Uninstall`.
 
 ## About
 
-FtpZilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license, and use **Check for updates** to look for a new release on demand.
+FtpZilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click the **ⓘ** button at the bottom-right of the Connections sidebar to see the version, license and keyboard shortcuts. From there, **Check for updates** looks for a new release on demand, and **Release notes** shows what changed in each version (from [CHANGELOG.md](CHANGELOG.md)).
+
+The Connections sidebar can be resized by dragging its right edge; double-click the edge to reset it.
 
 ## Saved connections and groups
 

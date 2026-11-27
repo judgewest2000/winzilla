@@ -12,7 +12,7 @@ public sealed record UpdateInfo(Version Version, string DownloadUrl, string Sha2
 /// <summary>Checks GitHub Releases for a newer version and runs its Setup.exe.</summary>
 public static class UpdateService
 {
-    private const string Repo = "judgewest2000/ftpzilla";
+    public const string Repo = "judgewest2000/ftpzilla";
 
     private static readonly HttpClient Http = CreateClient();
 
