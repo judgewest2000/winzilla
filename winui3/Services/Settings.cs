@@ -1,20 +1,23 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Winzilla.Services;
 
-/// <summary>Persisted preferences. Passwords are never stored.</summary>
+/// <summary>
+/// Preferences and known SFTP host keys, in %LOCALAPPDATA%\Winzilla\settings.json.
+/// Saved connections and their passwords live in <see cref="ConnectionStore"/>.
+/// </summary>
 public sealed class Settings
 {
-    private static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Winzilla", "settings.json");
+    private static readonly string FilePath = Path.Combine(ConnectionStore.DefaultRoot, "settings.json");
 
-    private static readonly object Sync = new();
+    private readonly object _sync = new();
 
+    /// <summary>The quick-connect form as last used (never the password).</summary>
     public Protocol Protocol { get; set; } = Protocol.Sftp;
     public string Host { get; set; } = "";
     public int Port { get; set; } = 22;
     public string User { get; set; } = "";
-    public List<SavedConnection> Connections { get; set; } = [];
     public Dictionary<string, string> KnownHosts { get; set; } = [];
 
     public static Settings Load()
@@ -22,9 +25,9 @@ public sealed class Settings
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? new Settings();
+                return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath), ConnectionStore.JsonOptions) ?? new Settings();
         }
-        catch { }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException) { }
         return new Settings();
     }
 
@@ -32,20 +35,22 @@ public sealed class Settings
     {
         try
         {
-            lock (Sync)
+            lock (_sync)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-                File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+                var temp = FilePath + ".tmp";
+                File.WriteAllText(temp, JsonSerializer.Serialize(this, ConnectionStore.JsonOptions));
+                File.Move(temp, FilePath, overwrite: true);
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>Trust-on-first-use: new hosts are remembered, changed keys are rejected.</summary>
     public bool VerifyHostKey(string host, int port, string keyName, string fingerprint, out string? error)
     {
         var id = $"{host}:{port}:{keyName}";
-        lock (Sync)
+        lock (_sync)
         {
             if (KnownHosts.TryGetValue(id, out var known))
             {

@@ -37,7 +37,7 @@ public sealed partial class MainPage
     {
         var client = _client;
         var items = SelectedEntries();
-        if (client is null || items.Count == 0) return;
+        if (client is null || items.Count == 0 || cut && WriteBlocked()) return;
 
         // Nothing is downloaded here. Explorer pulls the bytes from the server when the user pastes.
         ClipState? clip = null;
@@ -228,16 +228,19 @@ public sealed partial class MainPage
         var selected = SelectedEntries();
         bool connected = _client is not null;
         bool any = connected && selected.Count > 0;
+        bool writable = connected && !_client!.IsReadOnly;
         var view = GetClipboardView();
 
         MenuOpen.Visibility = selected is [{ IsDirectory: true }] ? Visibility.Visible : Visibility.Collapsed;
         MenuDownload.IsEnabled = any;
-        MenuUpload.IsEnabled = connected;
-        MenuCut.IsEnabled = MenuCopy.IsEnabled = MenuDelete.IsEnabled = MenuProperties.IsEnabled = any;
-        MenuPaste.IsEnabled = connected
+        MenuUpload.IsEnabled = writable;
+        MenuCopy.IsEnabled = MenuProperties.IsEnabled = any;
+        MenuCut.IsEnabled = MenuDelete.IsEnabled = any && writable;
+        MenuPaste.IsEnabled = writable
             && (_clip is not null && RemoteClipboard.IsOnClipboard || view is not null && view.Contains(StandardDataFormats.StorageItems));
-        MenuRename.IsEnabled = connected && selected.Count == 1;
-        MenuNewFolder.IsEnabled = MenuRefresh.IsEnabled = connected;
+        MenuRename.IsEnabled = writable && selected.Count == 1;
+        MenuNewFolder.IsEnabled = writable;
+        MenuRefresh.IsEnabled = connected;
     }
 
     private async void MenuOpen_Click(object sender, RoutedEventArgs e)

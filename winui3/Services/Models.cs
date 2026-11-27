@@ -1,11 +1,6 @@
 namespace Winzilla.Services;
 
-public enum Protocol { Sftp, Ftp }
-
 public sealed record ConnectionSettings(Protocol Protocol, string Host, int Port, string User, string Password);
-
-/// <summary>A named connection. The password lives in <see cref="CredentialStore"/>, never in settings.json.</summary>
-public sealed record SavedConnection(string Id, string Name, Protocol Protocol, string Host, int Port, string User);
 
 public sealed class FileEntry
 {

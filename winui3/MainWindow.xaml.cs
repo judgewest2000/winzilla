@@ -1,15 +1,11 @@
 using Microsoft.UI.Xaml;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Microsoft.UI.Xaml.Media;
+using Winzilla.Services;
+using Winzilla.Views;
 
 namespace Winzilla;
 
-/// <summary>
-/// The application window. This hosts a Frame that displays pages. Add your
-/// UI and logic to MainPage.xaml / MainPage.xaml.cs instead of here so you
-/// can use Page features such as navigation events and the Loaded lifecycle.
-/// </summary>
+/// <summary>The application window. It hosts <see cref="MainPage"/> and owns the title bar.</summary>
 public sealed partial class MainWindow : Window
 {
     public MainWindow()
@@ -21,7 +17,28 @@ public sealed partial class MainWindow : Window
 
         AppWindow.SetIcon("Assets/AppIcon.ico");
 
-        // Navigate the root frame to the main page on startup.
         RootFrame.Navigate(typeof(MainPage));
+    }
+
+    /// <summary>Tints the title bar with the connected server's group colour, or clears it when <paramref name="group"/> is null.</summary>
+    public void ShowConnection(ConnectionGroup? group, string? connectionName)
+    {
+        AppTitleBar.Subtitle = connectionName ?? "";
+        Title = connectionName is null ? "Winzilla" : $"{connectionName} - Winzilla";
+        if (group is null)
+        {
+            AppTitleBar.Background = null;
+            TitleGroupBadge.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var color = GroupColors.Parse(group.Color);
+        var text = new SolidColorBrush(GroupColors.ContrastText(color));
+        AppTitleBar.Background = new SolidColorBrush(GroupColors.WithAlpha(color, 0x50));
+        TitleGroupBadge.Background = new SolidColorBrush(color);
+        TitleGroupText.Foreground = TitleGroupLock.Foreground = text;
+        TitleGroupText.Text = group.LabelWithReadOnly.ToUpperInvariant();
+        TitleGroupLock.Visibility = group.IsReadOnly ? Visibility.Visible : Visibility.Collapsed;
+        TitleGroupBadge.Visibility = Visibility.Visible;
     }
 }

@@ -40,9 +40,23 @@ Use Windows Settings > Apps, or run the one-liner above with `-Uninstall`.
 
 Winzilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license, and use **Check for updates** to look for a new release on demand.
 
-## Saved connections
+## Saved connections and groups
 
-The WinUI 3 app can store multiple FTP/SFTP connections (name, protocol, host, port, user) in `%APPDATA%\Winzilla\settings.json`. Tick **Remember password** to save the password in the Windows Password Vault (PasswordVault, tied to your Windows account); passwords are never written to `settings.json`.
+The WinUI 3 app lists saved FTP/SFTP connections in a sidebar, organised into coloured groups (Production, Develop and Read-only by default). Double-click a connection to connect. Right-click a connection or group to edit, duplicate, reorder or delete it.
+
+- When you connect to a server, the title bar and remote pane take on its group's colour and show the group name, so you can see where you are.
+- Groups marked **Read-only** allow browsing and downloading only. Upload, new folder, rename, delete, cut, paste and drop are all blocked.
+
+Everything is stored under `%LOCALAPPDATA%\Winzilla`:
+
+| File | Contents |
+| --- | --- |
+| `connections.json` | Groups and connections. Saved passwords are encrypted with Windows DPAPI (current-user scope) and can't be decrypted by another Windows account or on another PC. |
+| `settings.json` | The last quick-connect details (no password) and trusted SFTP host keys. |
+
+Files are written atomically. An unreadable `connections.json` is kept as `connections.json.corrupt-<timestamp>` and replaced with the default groups.
+
+Run the storage tests with `dotnet test tests\Winzilla.Tests`.
 
 ## Updates
 
