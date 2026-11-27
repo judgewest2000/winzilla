@@ -603,7 +603,7 @@ public sealed partial class MainPage : Page
     {
         if (XamlRoot is null) return;
         var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3);
-        var panel = new StackPanel { Spacing = 8 };
+        var panel = new StackPanel { Spacing = 8, Width = Math.Min(600, Math.Max(0, XamlRoot.Size.Width - 96)) };
         panel.Children.Add(new TextBlock
         {
             Text = $"Version {version}\nA lightweight FTP and SFTP file-transfer client.\n\nCopyright (c) 2026 James West\nReleased under the MIT License.",
@@ -623,9 +623,11 @@ public sealed partial class MainPage : Page
         {
             XamlRoot = XamlRoot,
             Title = "About FtpZilla",
-            Content = panel,
+            Content = new ScrollViewer { Content = panel },
             CloseButtonText = "OK",
         };
+        dialog.Resources["ContentDialogMaxWidth"] = 800.0;
+        dialog.Resources["ContentDialogMaxHeight"] = Math.Max(0, XamlRoot.Size.Height - 48);
         checkButton.Click += async (_, _) =>
         {
             checkButton.IsEnabled = false;
