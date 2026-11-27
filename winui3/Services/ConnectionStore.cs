@@ -2,9 +2,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
-/// <summary>Persists connection groups to %LOCALAPPDATA%\Winzilla\connections.json.</summary>
+/// <summary>Persists connection groups to %LOCALAPPDATA%\FtpZilla\connections.json.</summary>
 public sealed class ConnectionStore
 {
     public static readonly JsonSerializerOptions JsonOptions = new()
@@ -21,7 +21,26 @@ public sealed class ConnectionStore
         RootDirectory = rootDirectory ?? DefaultRoot;
     }
 
-    public static string DefaultRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Winzilla");
+    public static string DefaultRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FtpZilla");
+
+    /// <summary>Where data lived before the app was renamed from Winzilla.</summary>
+    public static string LegacyRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Winzilla");
+
+    /// <summary>Moves <paramref name="legacyRoot"/> to <paramref name="root"/> unless <paramref name="root"/> already exists.</summary>
+    /// <returns>True if the folder was moved.</returns>
+    public static bool MigrateLegacyRoot(string legacyRoot, string root)
+    {
+        if (Directory.Exists(root) || !Directory.Exists(legacyRoot)) return false;
+        try
+        {
+            Directory.Move(legacyRoot, root);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
 
     public string RootDirectory { get; }
     private string FilePath => Path.Combine(RootDirectory, "connections.json");

@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
-    <RootNamespace>Winzilla</RootNamespace>
-    <AssemblyName>Winzilla</AssemblyName>
+    <RootNamespace>FtpZilla</RootNamespace>
+    <AssemblyName>FtpZilla</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <LangVersion>latest</LangVersion>

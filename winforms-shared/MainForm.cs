@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Winzilla
+namespace FtpZilla
 {
     public sealed class MainForm : Form
     {
@@ -56,7 +56,7 @@ namespace Winzilla
 
         public MainForm()
         {
-            Text = "Winzilla";
+            Text = "FtpZilla";
             Font = SystemFonts.MessageBoxFont ?? Font;
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(Scale(980), Scale(620));

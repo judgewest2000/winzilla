@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace Winzilla
+namespace FtpZilla
 {
     /// <summary>Persisted preferences. Passwords are never stored.</summary>
     public sealed class Settings
     {
         private static readonly string FilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FtpZilla", "settings.json");
+
+        // Settings written before the app was renamed from Winzilla.
+        private static readonly string LegacyFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Winzilla", "settings.json");
 
         private static readonly object Sync = new object();
@@ -25,6 +29,8 @@ namespace Winzilla
             {
                 if (File.Exists(FilePath))
                     return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? new Settings();
+                if (File.Exists(LegacyFilePath))
+                    return JsonSerializer.Deserialize<Settings>(File.ReadAllText(LegacyFilePath)) ?? new Settings();
             }
             catch (Exception) { }
             return new Settings();

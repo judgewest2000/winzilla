@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Renci.SshNet;
 
-namespace Winzilla
+namespace FtpZilla
 {
     public sealed class SftpRemoteClient : IRemoteClient
     {

@@ -1,11 +1,11 @@
 using System.Text.Json;
-using Winzilla.Services;
+using FtpZilla.Services;
 
-namespace Winzilla.Tests;
+namespace FtpZilla.Tests;
 
 public sealed class ConnectionStoreTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "Winzilla.Tests", Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "FtpZilla.Tests", Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {
@@ -53,6 +53,23 @@ public sealed class ConnectionStoreTests : IDisposable
 
         Assert.NotEmpty(groups);
         Assert.Single(Directory.GetFiles(_root, "connections.json.corrupt-*"));
+    }
+
+    [Fact]
+    public void LegacyFolderIsMovedOnlyWhenNewFolderIsMissing()
+    {
+        var legacy = Path.Combine(_root, "Winzilla");
+        var current = Path.Combine(_root, "FtpZilla");
+        Directory.CreateDirectory(legacy);
+        File.WriteAllText(Path.Combine(legacy, "connections.json"), "[]");
+
+        Assert.True(ConnectionStore.MigrateLegacyRoot(legacy, current));
+        Assert.True(File.Exists(Path.Combine(current, "connections.json")));
+        Assert.False(Directory.Exists(legacy));
+
+        Directory.CreateDirectory(legacy);
+        Assert.False(ConnectionStore.MigrateLegacyRoot(legacy, current));
+        Assert.True(Directory.Exists(legacy));
     }
 
     [Fact]

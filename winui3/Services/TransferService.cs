@@ -1,4 +1,4 @@
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>Recursive upload/download built on top of <see cref="IRemoteClient"/>.</summary>
 public static class TransferService

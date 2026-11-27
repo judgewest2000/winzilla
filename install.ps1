@@ -1,17 +1,17 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Installs (or uninstalls) the Winzilla WinUI 3 app for the current user.
+    Installs (or uninstalls) the FtpZilla WinUI 3 app for the current user.
 .EXAMPLE
-    & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/winzilla/main/install.ps1")))
+    & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/ftpzilla/main/install.ps1")))
 .EXAMPLE
-    & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/winzilla/main/install.ps1"))) -Uninstall
+    & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/ftpzilla/main/install.ps1"))) -Uninstall
 #>
 [CmdletBinding()]
 param(
-    [string]$Repo = 'judgewest2000/winzilla',
+    [string]$Repo = 'judgewest2000/ftpzilla',
     [string]$Version = 'latest',
-    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\Winzilla'),
+    [string]$InstallDir = (Join-Path $env:LOCALAPPDATA 'Programs\FtpZilla'),
     [switch]$Uninstall
 )
 
@@ -19,10 +19,23 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-$appName = 'Winzilla'
-$exeName = 'Winzilla.exe'
+$appName = 'FtpZilla'
+$exeName = 'FtpZilla.exe'
 $startMenu = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\$appName.lnk"
 $uninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\$appName"
+
+# The app was called Winzilla before 1.1.0; remove that install (its data is migrated on first launch).
+function Remove-LegacyInstall {
+    $legacyDir = Join-Path $env:LOCALAPPDATA 'Programs\Winzilla'
+    Get-Process -Name 'Winzilla' -ErrorAction SilentlyContinue |
+        Where-Object { $_.Path -like "$legacyDir\*" } |
+        Stop-Process -Force
+    @(
+        $legacyDir,
+        (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Winzilla.lnk'),
+        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Winzilla'
+    ) | Where-Object { Test-Path $_ } | ForEach-Object { Remove-Item $_ -Recurse -Force }
+}
 
 function Stop-App {
     $exe = Join-Path $InstallDir $exeName
@@ -71,6 +84,7 @@ try {
     if (-not (Test-Path (Join-Path $staging $exeName))) { throw "$exeName not found in $assetName." }
 
     Stop-App
+    Remove-LegacyInstall
     if (Test-Path $InstallDir) { Remove-Item $InstallDir -Recurse -Force }
     New-Item -ItemType Directory -Path (Split-Path $InstallDir) -Force | Out-Null
     Move-Item -Path $staging -Destination $InstallDir

@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>Explorer-style icons from the shell, looked up by extension (no file access needed). Must be used on the UI thread.</summary>
 public static class ShellIcons

@@ -8,15 +8,17 @@
 
 [Setup]
 AppId={{E36A7BAD-5C03-4318-B4E2-BEFE166A2922}
-AppName=Winzilla
+AppName=FtpZilla
 AppVersion={#AppVersion}
 AppPublisher=judgewest2000
-DefaultDirName={localappdata}\Programs\Winzilla
-DefaultGroupName=Winzilla
+DefaultDirName={localappdata}\Programs\FtpZilla
+; Same AppId as the former Winzilla, so this upgrades it; don't reuse its old Programs\Winzilla folder.
+UsePreviousAppDir=no
+DefaultGroupName=FtpZilla
 PrivilegesRequired=lowest
-UninstallDisplayIcon={app}\Winzilla.exe
+UninstallDisplayIcon={app}\FtpZilla.exe
 OutputDir=..\publish
-OutputBaseFilename=Winzilla-Setup-{#Arch}
+OutputBaseFilename=FtpZilla-Setup-{#Arch}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -36,18 +38,25 @@ ArchitecturesAllowed=x86compatible
 Source: "..\publish\win-{#Arch}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
-Name: "{autoprograms}\Winzilla"; Filename: "{app}\Winzilla.exe"
-Name: "{autodesktop}\Winzilla"; Filename: "{app}\Winzilla.exe"; Tasks: desktopicon
+Name: "{autoprograms}\FtpZilla"; Filename: "{app}\FtpZilla.exe"
+Name: "{autodesktop}\FtpZilla"; Filename: "{app}\FtpZilla.exe"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; Flags: unchecked
 
 [Run]
-Filename: "{app}\Winzilla.exe"; Description: "Launch Winzilla"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\Winzilla.exe"; Flags: nowait runasoriginaluser; Check: ShouldRelaunch
+Filename: "{app}\FtpZilla.exe"; Description: "Launch FtpZilla"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\FtpZilla.exe"; Flags: nowait runasoriginaluser; Check: ShouldRelaunch
+
+[InstallDelete]
+; Leftovers from when the app was called Winzilla.
+Type: filesandordirs; Name: "{localappdata}\Programs\Winzilla"
+Type: files; Name: "{autoprograms}\Winzilla.lnk"
+Type: files; Name: "{autodesktop}\Winzilla.lnk"
 
 [Registry]
-; Remove the Apps & Features entry written by install.ps1 so only this installer's entry remains.
+; Remove the Apps & Features entries written by install.ps1 so only this installer's entry remains.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\FtpZilla"; Flags: deletekey
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\Winzilla"; Flags: deletekey
 
 [Code]

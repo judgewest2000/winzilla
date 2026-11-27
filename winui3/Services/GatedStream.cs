@@ -1,4 +1,4 @@
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>A read-only stream that holds a client's operation gate until it is disposed.</summary>
 internal sealed class GatedStream(Stream inner, SemaphoreSlim gate) : Stream

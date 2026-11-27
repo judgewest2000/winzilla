@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Winzilla
+namespace FtpZilla
 {
     public enum Protocol { Sftp, Ftp }
 

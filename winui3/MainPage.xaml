@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Page
-    x:Class="Winzilla.MainPage"
+    x:Class="FtpZilla.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:svc="using:Winzilla.Services"
-    xmlns:views="using:Winzilla.Views">
+    xmlns:svc="using:FtpZilla.Services"
+    xmlns:views="using:FtpZilla.Views">
 
     <Page.Resources>
         <DataTemplate x:Key="ConnectionItemTemplate" x:DataType="views:ConnectionEntry">
@@ -320,7 +320,7 @@
             <TextBlock x:Name="StatusText" Text="Ready" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <ProgressBar Grid.Column="1" x:Name="Progress" IsIndeterminate="True" Visibility="Collapsed" />
             <Button Grid.Column="2" x:Name="CancelButton" Content="Cancel" Visibility="Collapsed" Click="Cancel_Click" />
-            <HyperlinkButton Grid.Column="3" x:Name="AboutButton" Content="About" AutomationProperties.Name="About Winzilla" Click="About_Click" />
+            <HyperlinkButton Grid.Column="3" x:Name="AboutButton" Content="About" AutomationProperties.Name="About FtpZilla" Click="About_Click" />
         </Grid>
     </Grid>
     </Grid>

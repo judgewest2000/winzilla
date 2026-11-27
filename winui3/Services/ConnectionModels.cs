@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 public enum Protocol { Sftp, Ftp }
 

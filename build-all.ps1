@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Production (Release) builds of every Winzilla variant into .\dist.
+    Production (Release) builds of every FtpZilla variant into .\dist.
 .DESCRIPTION
     - winui3         : WinUI 3 (self-contained, via winui3\publish-release.ps1)
     - winforms-core  : WinForms on modern .NET (self-contained, single file)
@@ -50,25 +50,25 @@ Invoke-Step 'WinUI 3' {
     Remove-Item (Join-Path $OutputDir '_winui3') -Recurse -Force
     $global:LASTEXITCODE = 0
 }
-Compress-Output $winuiOut "Winzilla-winui3-$rid"
+Compress-Output $winuiOut "FtpZilla-winui3-$rid"
 
 # 2. WinForms on modern .NET
 $coreOut = Join-Path $OutputDir "winforms-core-$rid"
 Invoke-Step 'WinForms (.NET)' {
-    dotnet publish (Join-Path $PSScriptRoot 'winforms-core\Winzilla.WinForms.csproj') `
+    dotnet publish (Join-Path $PSScriptRoot 'winforms-core\FtpZilla.WinForms.csproj') `
         -c Release -r $rid --self-contained true `
         -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
         -o $coreOut
 }
-Compress-Output $coreOut "Winzilla-winforms-core-$rid"
+Compress-Output $coreOut "FtpZilla-winforms-core-$rid"
 
 # 3. WinForms on .NET Framework 4.8
 $netfxOut = Join-Path $OutputDir 'winforms-netfx'
 Invoke-Step 'WinForms (.NET Framework 4.8)' {
-    dotnet build (Join-Path $PSScriptRoot 'winforms-netfx\Winzilla.WinForms.NetFx.csproj') `
+    dotnet build (Join-Path $PSScriptRoot 'winforms-netfx\FtpZilla.WinForms.NetFx.csproj') `
         -c Release -o $netfxOut
 }
-Compress-Output $netfxOut 'Winzilla-winforms-netfx'
+Compress-Output $netfxOut 'FtpZilla-winforms-netfx'
 
 Write-Host "`nAll builds complete: $OutputDir" -ForegroundColor Green
 Get-ChildItem $OutputDir | ForEach-Object { Write-Host "  $($_.Name)" }

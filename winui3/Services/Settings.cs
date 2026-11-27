@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>
-/// Preferences and known SFTP host keys, in %LOCALAPPDATA%\Winzilla\settings.json.
+/// Preferences and known SFTP host keys, in %LOCALAPPDATA%\FtpZilla\settings.json.
 /// Saved connections and their passwords live in <see cref="ConnectionStore"/>.
 /// </summary>
 public sealed class Settings

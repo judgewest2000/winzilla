@@ -9,16 +9,16 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.System;
 using WinRT.Interop;
-using Winzilla.Services;
-using Winzilla.Views;
+using FtpZilla.Services;
+using FtpZilla.Views;
 
-namespace Winzilla;
+namespace FtpZilla;
 
 public sealed partial class MainPage : Page
 {
     private const int MaxLogLines = 1000;
 
-    private static readonly string TempRoot = Path.Combine(Path.GetTempPath(), "Winzilla");
+    private static readonly string TempRoot = Path.Combine(Path.GetTempPath(), "FtpZilla");
 
     private readonly Settings _settings = Settings.Load();
     private GuardedRemoteClient? _client;
@@ -79,7 +79,7 @@ public sealed partial class MainPage : Page
             Title = "Update available",
             Content = new TextBlock
             {
-                Text = $"Winzilla {update.Version} is available (you have {UpdateService.CurrentVersion}). Update now? Winzilla will restart.",
+                Text = $"FtpZilla {update.Version} is available (you have {UpdateService.CurrentVersion}). Update now? FtpZilla will restart.",
                 TextWrapping = TextWrapping.Wrap,
             },
             PrimaryButtonText = "Update now",
@@ -88,7 +88,7 @@ public sealed partial class MainPage : Page
         };
         if (await prompt.ShowAsync() != ContentDialogResult.Primary) return;
 
-        SetStatus($"Downloading Winzilla {update.Version}...");
+        SetStatus($"Downloading FtpZilla {update.Version}...");
         Progress.Visibility = Visibility.Visible;
         try
         {
@@ -519,7 +519,7 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        var picker = new FileSavePicker { SuggestedFileName = $"winzilla-log-{DateTime.Now:yyyyMMdd-HHmmss}" };
+        var picker = new FileSavePicker { SuggestedFileName = $"ftpzilla-log-{DateTime.Now:yyyyMMdd-HHmmss}" };
         picker.FileTypeChoices.Add("Text file", [".txt"]);
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
         var file = await picker.PickSaveFileAsync();
@@ -611,8 +611,8 @@ public sealed partial class MainPage : Page
         });
         panel.Children.Add(new HyperlinkButton
         {
-            Content = "github.com/judgewest2000/winzilla",
-            NavigateUri = new Uri("https://github.com/judgewest2000/winzilla"),
+            Content = "github.com/judgewest2000/ftpzilla",
+            NavigateUri = new Uri("https://github.com/judgewest2000/ftpzilla"),
             Padding = new Thickness(0),
         });
 
@@ -622,7 +622,7 @@ public sealed partial class MainPage : Page
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "About Winzilla",
+            Title = "About FtpZilla",
             Content = panel,
             CloseButtonText = "OK",
         };

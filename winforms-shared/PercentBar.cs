@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Winzilla
+namespace FtpZilla
 {
     /// <summary>Progress bar with the percentage drawn on top (the stock ProgressBar can't show text).</summary>
     internal sealed class PercentBar : Control

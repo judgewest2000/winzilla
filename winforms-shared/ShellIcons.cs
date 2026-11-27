@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace Winzilla
+namespace FtpZilla
 {
     /// <summary>Explorer-style icons from the shell, looked up by extension (no file access needed).</summary>
     public static class ShellIcons

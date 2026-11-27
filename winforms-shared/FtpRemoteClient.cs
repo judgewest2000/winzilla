@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentFTP;
 
-namespace Winzilla
+namespace FtpZilla
 {
     public sealed class FtpRemoteClient : IRemoteClient
     {

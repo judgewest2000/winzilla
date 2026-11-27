@@ -1,6 +1,6 @@
 using FluentFTP;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 public sealed class FtpRemoteClient : IRemoteClient
 {

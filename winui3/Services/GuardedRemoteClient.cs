@@ -1,4 +1,4 @@
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>
 /// Wraps the live client so a connection in a read-only group can't change the server,

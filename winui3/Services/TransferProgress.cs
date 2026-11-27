@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>
 /// Progress of the file currently being transferred. Written from the transfer thread and

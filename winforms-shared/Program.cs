@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace Winzilla
+namespace FtpZilla
 {
     internal static class Program
     {

@@ -1,4 +1,4 @@
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 public sealed record ConnectionSettings(Protocol Protocol, string Host, int Port, string User, string Password);
 

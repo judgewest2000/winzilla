@@ -5,14 +5,14 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 public sealed record UpdateInfo(Version Version, string DownloadUrl, string Sha256);
 
 /// <summary>Checks GitHub Releases for a newer version and runs its Setup.exe.</summary>
 public static class UpdateService
 {
-    private const string Repo = "judgewest2000/winzilla";
+    private const string Repo = "judgewest2000/ftpzilla";
 
     private static readonly HttpClient Http = CreateClient();
 
@@ -29,7 +29,7 @@ public static class UpdateService
             || Normalize(latest) <= CurrentVersion)
             return null;
 
-        var assetName = $"Winzilla-Setup-{ArchitectureName()}.exe";
+        var assetName = $"FtpZilla-Setup-{ArchitectureName()}.exe";
         foreach (var asset in root.GetProperty("assets").EnumerateArray())
         {
             if (asset.GetProperty("name").GetString() != assetName) continue;
@@ -45,7 +45,7 @@ public static class UpdateService
     /// <summary>Downloads the installer and verifies its SHA-256 against the digest GitHub published.</summary>
     public static async Task<string> DownloadAsync(UpdateInfo update, CancellationToken ct)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"Winzilla-Setup-{update.Version}.exe");
+        var path = Path.Combine(Path.GetTempPath(), $"FtpZilla-Setup-{update.Version}.exe");
 
         using (var response = await Http.GetAsync(update.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct))
         {
@@ -86,7 +86,7 @@ public static class UpdateService
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Winzilla-updater");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("FtpZilla-updater");
         return client;
     }
 }

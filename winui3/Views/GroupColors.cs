@@ -2,7 +2,7 @@ using System.Globalization;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 
-namespace Winzilla.Views;
+namespace FtpZilla.Views;
 
 /// <summary>Converts group colours (#RRGGBB) into the brushes used for tree swatches, the title bar and the remote pane.</summary>
 public static class GroupColors

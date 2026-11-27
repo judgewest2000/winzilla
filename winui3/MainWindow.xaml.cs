@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Winzilla.Services;
-using Winzilla.Views;
+using FtpZilla.Services;
+using FtpZilla.Views;
 
-namespace Winzilla;
+namespace FtpZilla;
 
 /// <summary>The application window. It hosts <see cref="MainPage"/> and owns the title bar.</summary>
 public sealed partial class MainWindow : Window
@@ -24,7 +24,7 @@ public sealed partial class MainWindow : Window
     public void ShowConnection(ConnectionGroup? group, string? connectionName)
     {
         AppTitleBar.Subtitle = connectionName ?? "";
-        Title = connectionName is null ? "Winzilla" : $"{connectionName} - Winzilla";
+        Title = connectionName is null ? "FtpZilla" : $"{connectionName} - FtpZilla";
         if (group is null)
         {
             AppTitleBar.Background = null;

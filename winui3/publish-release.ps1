@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Creates a production (Release, self-contained) build of Winzilla.
+    Creates a production (Release, self-contained) build of FtpZilla.
 .EXAMPLE
     .\publish-release.ps1
     .\publish-release.ps1 -Platform ARM64 -Zip
@@ -18,7 +18,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$project = Join-Path $PSScriptRoot 'Winzilla.csproj'
+$project = Join-Path $PSScriptRoot 'FtpZilla.csproj'
 $rid = "win-$($Platform.ToLowerInvariant())"
 $target = Join-Path $OutputDir $rid
 
@@ -26,7 +26,7 @@ if ($Clean -and (Test-Path $target)) {
     Remove-Item $target -Recurse -Force
 }
 
-Write-Host "Publishing Winzilla (Release, $rid) to $target" -ForegroundColor Cyan
+Write-Host "Publishing FtpZilla (Release, $rid) to $target" -ForegroundColor Cyan
 
 dotnet publish $project `
     -c Release `
@@ -38,7 +38,7 @@ dotnet publish $project `
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
 
 if ($Zip) {
-    $zipPath = Join-Path $OutputDir "Winzilla-$rid.zip"
+    $zipPath = Join-Path $OutputDir "FtpZilla-$rid.zip"
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
     Compress-Archive -Path (Join-Path $target '*') -DestinationPath $zipPath
     Write-Host "Created $zipPath" -ForegroundColor Green

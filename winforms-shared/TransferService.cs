@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Winzilla
+namespace FtpZilla
 {
     /// <summary>Recursive upload/download built on top of <see cref="IRemoteClient"/>.</summary>
     public static class TransferService

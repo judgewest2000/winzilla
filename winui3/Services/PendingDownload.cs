@@ -1,4 +1,4 @@
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>
 /// A download that runs at most once, however many times its result is requested. The shell asks for the

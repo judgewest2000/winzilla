@@ -1,6 +1,6 @@
 using Renci.SshNet;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 public sealed class SftpRemoteClient(Settings settings) : IRemoteClient
 {

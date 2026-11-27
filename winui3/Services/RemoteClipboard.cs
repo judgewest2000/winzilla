@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using ComTypes = System.Runtime.InteropServices.ComTypes;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>One file or folder to be pasted, with its path relative to the pasted root.</summary>
 public sealed record RemoteNode(string RemotePath, string RelativePath, bool IsDirectory, long Size, DateTime? Modified);
@@ -29,14 +29,14 @@ public sealed class RemoteClipboard
         Func<RemoteNode, CancellationToken, Task<OpenedRemote>> open, Action moved)
     {
         _data = new RemoteDataObject(items, client, cut, open, moved, _cts.Token);
-        _thread = new Thread(Run) { IsBackground = true, Name = "Winzilla clipboard" };
+        _thread = new Thread(Run) { IsBackground = true, Name = "FtpZilla clipboard" };
         _thread.SetApartmentState(ApartmentState.STA);
     }
 
     /// <summary>Raised on the clipboard thread once these items are no longer on the clipboard.</summary>
     public event Action? Ended;
 
-    /// <summary>True while a Winzilla clipboard (from any instance) is on the clipboard.</summary>
+    /// <summary>True while a FtpZilla clipboard (from any instance) is on the clipboard.</summary>
     public static bool IsOnClipboard => Native.IsClipboardFormatAvailable(Native.OwnFormat);
 
     public void Start()
@@ -396,7 +396,7 @@ internal static class Native
     public const uint MwmoInputAvailable = 0x4;
     public const uint PmRemove = 0x1;
 
-    public static readonly uint OwnFormat = RegisterClipboardFormat("Winzilla.RemoteItems");
+    public static readonly uint OwnFormat = RegisterClipboardFormat("FtpZilla.RemoteItems");
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Msg

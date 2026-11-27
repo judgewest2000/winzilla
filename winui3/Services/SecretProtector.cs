@@ -1,12 +1,13 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Winzilla.Services;
+namespace FtpZilla.Services;
 
 /// <summary>Encrypts secrets at rest with DPAPI (current user), so the connections file is useless on another account or machine.</summary>
 public static class SecretProtector
 {
     private const string Prefix = "dpapi:";
+    // Kept from the app's former name (Winzilla) so passwords saved before the rename still decrypt.
     private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Winzilla.v1");
 
     public static string Protect(string plain)

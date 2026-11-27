@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Winzilla
+namespace FtpZilla
 {
     /// <summary>
     /// Progress of the file currently being transferred. Written from the transfer thread and

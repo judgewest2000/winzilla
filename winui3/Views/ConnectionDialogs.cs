@@ -2,9 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Winzilla.Services;
+using FtpZilla.Services;
 
-namespace Winzilla.Views;
+namespace FtpZilla.Views;
 
 /// <summary>The edited copy of a saved connection and the group it should live in.</summary>
 public sealed class ConnectionEditResult(SavedConnection connection, ConnectionGroup group)
@@ -132,7 +132,7 @@ public static class ConnectionDialogs
         var passwordBox = new PasswordBox { Header = "Password", Password = connection.Password, PlaceholderText = "Leave empty to be asked when connecting" };
         var hint = new TextBlock
         {
-            Text = "The password is encrypted for your Windows account (DPAPI) and stored in %LOCALAPPDATA%\\Winzilla\\connections.json.",
+            Text = "The password is encrypted for your Windows account (DPAPI) and stored in %LOCALAPPDATA%\\FtpZilla\\connections.json.",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 12,
             Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],

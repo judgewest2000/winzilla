@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Winzilla.Services;
+using FtpZilla.Services;
 
-namespace Winzilla.Views;
+namespace FtpZilla.Views;
 
 /// <summary>View-model for one row in the connections tree: a group, or a saved connection inside it.</summary>
 public sealed class ConnectionEntry

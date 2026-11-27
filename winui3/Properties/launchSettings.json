@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "Winzilla (Package)": {
+    "FtpZilla (Package)": {
       "commandName": "MsixPackage"
     },
-    "Winzilla (Unpackaged)": {
+    "FtpZilla (Unpackaged)": {
       "commandName": "Project"
     }
   }

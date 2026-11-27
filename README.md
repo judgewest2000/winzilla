@@ -1,6 +1,8 @@
-# Winzilla
+# FtpZilla
 
-Winzilla is a lightweight Windows file-transfer client for **FTP** and **SFTP**. Connect to a remote server and move files between it and your PC, using native Windows shell icons and a Mica-backed look.
+FtpZilla is a lightweight Windows file-transfer client for **FTP** and **SFTP**. Connect to a remote server and move files between it and your PC, using native Windows shell icons and a Mica-backed look.
+
+FtpZilla was called **Winzilla** before version 1.1.0. Installing FtpZilla replaces Winzilla, and your saved connections move to the new data folder automatically on first launch.
 
 It comes in three variants:
 
@@ -17,20 +19,20 @@ Requires Windows 10 1809 or later. Installs per user, no admin rights needed.
 ### Option 1: PowerShell one-liner
 
 ```powershell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/winzilla/main/install.ps1")))
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/judgewest2000/ftpzilla/main/install.ps1")))
 ```
 
-This downloads the latest release for your architecture (x64, ARM64 or x86) to `%LOCALAPPDATA%\Programs\Winzilla`, then adds a Start Menu shortcut and an Apps & Features entry.
+This downloads the latest release for your architecture (x64, ARM64 or x86) to `%LOCALAPPDATA%\Programs\FtpZilla`, then adds a Start Menu shortcut and an Apps & Features entry.
 
 Options (append after the closing parentheses):
 
 - `-Version v1.0.0` installs a specific release
 - `-InstallDir <path>` installs somewhere else
-- `-Uninstall` removes Winzilla
+- `-Uninstall` removes FtpZilla
 
 ### Option 2: Setup.exe
 
-Download `Winzilla-Setup-<arch>.exe` from the [latest release](https://github.com/judgewest2000/winzilla/releases/latest) and run it.
+Download `FtpZilla-Setup-<arch>.exe` from the [latest release](https://github.com/judgewest2000/ftpzilla/releases/latest) and run it.
 
 ### Uninstall
 
@@ -38,7 +40,7 @@ Use Windows Settings > Apps, or run the one-liner above with `-Uninstall`.
 
 ## About
 
-Winzilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license, and use **Check for updates** to look for a new release on demand.
+FtpZilla is open source, released under the [MIT License](LICENSE). Copyright (c) 2026 James West. In the WinUI 3 app, click **About** in the bottom-right corner to see the version and license, and use **Check for updates** to look for a new release on demand.
 
 ## Saved connections and groups
 
@@ -47,7 +49,7 @@ The WinUI 3 app lists saved FTP/SFTP connections in a sidebar, organised into co
 - When you connect to a server, the title bar and remote pane take on its group's colour and show the group name, so you can see where you are.
 - Groups marked **Read-only** allow browsing and downloading only. Upload, new folder, rename, delete, cut, paste and drop are all blocked.
 
-Everything is stored under `%LOCALAPPDATA%\Winzilla`:
+Everything is stored under `%LOCALAPPDATA%\FtpZilla`:
 
 | File | Contents |
 | --- | --- |
@@ -56,11 +58,11 @@ Everything is stored under `%LOCALAPPDATA%\Winzilla`:
 
 Files are written atomically. An unreadable `connections.json` is kept as `connections.json.corrupt-<timestamp>` and replaced with the default groups.
 
-Run the storage tests with `dotnet test tests\Winzilla.Tests`.
+Run the storage tests with `dotnet test tests\FtpZilla.Tests`.
 
 ## Updates
 
-On startup, the WinUI 3 app checks GitHub for a newer release and asks whether to update. Updating downloads the matching `Winzilla-Setup-<arch>.exe`, verifies its SHA-256 checksum, upgrades in place and restarts the app.
+On startup, the WinUI 3 app checks GitHub for a newer release and asks whether to update. Updating downloads the matching `FtpZilla-Setup-<arch>.exe`, verifies its SHA-256 checksum, upgrades in place and restarts the app.
 
 ## Build from source
 
@@ -82,7 +84,7 @@ Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSo
 ```powershell
 cd winui3\installer
 .\build-installer.ps1 -Platform x64 -Version 1.0.0
-gh release create v1.0.0 ..\publish\Winzilla-win-x64.zip ..\publish\Winzilla-Setup-x64.exe --title v1.0.0
+gh release create v1.0.0 ..\publish\FtpZilla-win-x64.zip ..\publish\FtpZilla-Setup-x64.exe --title v1.0.0
 ```
 
-The zip must be named `Winzilla-win-<arch>.zip` for `install.ps1` to find it. Repeat for `ARM64` and `x86` as needed.
+The zip must be named `FtpZilla-win-<arch>.zip` for `install.ps1` to find it. Repeat for `ARM64` and `x86` as needed.

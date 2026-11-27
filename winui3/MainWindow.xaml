@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Window
-    x:Class="Winzilla.MainWindow"
+    x:Class="FtpZilla.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Winzilla">
+    Title="FtpZilla">
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
@@ -14,7 +14,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar" Title="Winzilla">
+        <TitleBar x:Name="AppTitleBar" Title="FtpZilla">
             <TitleBar.IconSource>
                 <ImageIconSource ImageSource="Assets/AppIcon.ico" />
             </TitleBar.IconSource>
